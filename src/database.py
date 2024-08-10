@@ -1,5 +1,6 @@
 import asyncpg
 import asyncio
+from src.responses import DatabaseError
 
 
 class Database:
@@ -21,7 +22,34 @@ class Database:
     make_query():
         Accepts sql query and returns the result
     '''
-    def __init__(self, connection_string: str, min_size=1, max_size=5):
+    schema_query = """
+        SELECT
+            'CREATE TABLE ' || relname || E'\n(\n' ||
+            string_agg(
+                '    ' || column_name || ' ' ||  type || ' '|| not_null,
+                E',\n'
+            ) || E'\n);\n'
+        FROM (
+            SELECT
+                c.relname, a.attname AS column_name,
+                pg_catalog.format_type(a.atttypid, a.atttypmod) as type,
+                CASE
+                    WHEN a.attnotnull THEN 'NOT NULL' 
+                    ELSE 'NULL' 
+                END as not_null 
+            FROM pg_class c,
+                    pg_attribute a,
+                    pg_type t
+            WHERE c.relname = $1
+                AND a.attnum > 0
+                AND a.attrelid = c.oid
+                AND a.atttypid = t.oid
+            ORDER BY a.attnum
+        ) as tabledefinition
+        GROUP BY relname;
+    """
+
+    def __init__(self, connection_string: str, redis: any, min_size=1, max_size=5):
         self.connection_string = connection_string
         self.conn = None
         self.min_size = min_size
@@ -63,3 +91,18 @@ class Database:
             rows = await conn.fetch(query_str)
 
             return rows
+
+    async def get_table_schema(self, table_name: str):
+        '''
+        Gets a create table schema for the specified table
+        '''
+        try:
+            async with self.pool.acquire() as conn:
+                result = await conn.fetchval(Database.schema_query, table_name)
+                if result:
+                    return result
+                else:
+                    raise DatabaseError(f"Table '{table_name}' not found.")
+
+        except Exception as e:
+            raise DatabaseError(f"Error retrieving table schema. {e}")
