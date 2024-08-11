@@ -1,6 +1,6 @@
 import asyncpg
 import asyncio
-from src.responses import DatabaseError
+from src.errors import DatabaseError
 
 
 class Database:
@@ -49,7 +49,7 @@ class Database:
         GROUP BY relname;
     """
 
-    def __init__(self, connection_string: str, redis: any, min_size=1, max_size=5):
+    def __init__(self, connection_string: str, min_size=1, max_size=5):
         self.connection_string = connection_string
         self.conn = None
         self.min_size = min_size
@@ -69,9 +69,7 @@ class Database:
             # todo: pull in default max_pools with SHOW max_connections;
             print('Connection Succeded!')
         except Exception as error:
-            print(f"An error occurred: {error}")
-        finally:
-            pass
+            raise DatabaseError(error)
 
     async def make_query(self, query_str: str):
         '''
@@ -96,13 +94,9 @@ class Database:
         '''
         Gets a create table schema for the specified table
         '''
-        try:
-            async with self.pool.acquire() as conn:
-                result = await conn.fetchval(Database.schema_query, table_name)
-                if result:
-                    return result
-                else:
-                    raise DatabaseError(f"Table '{table_name}' not found.")
-
-        except Exception as e:
-            raise DatabaseError(f"Error retrieving table schema. {e}")
+        async with self.pool.acquire() as conn:
+            result = await conn.fetchval(Database.schema_query, table_name)
+            if result:
+                return result
+            else:
+                raise DatabaseError(f"Table '{table_name}' not found.")

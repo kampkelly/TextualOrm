@@ -4,22 +4,9 @@ from src.errors import SQLGeneratorError
 from src.libs.base import LLMType
 
 
-class SQLGeneratorFactory:
+class LLMFactory:
     @staticmethod
     def get_setting(llm_type, **kwargs):
-        '''
-        Returns the appropriate SQL generator based on the specified LLM type.
-
-        Args:
-            llm_type (LLMType): The type of language model to use.
-            **kwargs: Additional keyword arguments for initializing the specific SQL generator.
-
-        Returns:
-            SQLGeneratorLLM or OpenAILLM: An instance of the selected SQL generator based on the LLM type.
-
-        Raises:
-            ValueError: If the specified LLM type is unknown.
-        '''
         if llm_type == LLMType.DEFAULT:
             return SQLGeneratorLLM()
         elif llm_type == LLMType.OPENAI:
@@ -30,7 +17,7 @@ class SQLGeneratorFactory:
 
 class SQLGenerator:
     def __init__(self, setting_type: LLMType, **kwargs):
-        self.llm = SQLGeneratorFactory.get_setting(setting_type, **kwargs)
+        self.llm = LLMFactory.get_setting(setting_type, **kwargs)
 
     def setup(self):
         '''

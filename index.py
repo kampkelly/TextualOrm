@@ -3,6 +3,7 @@ import hashlib
 from src.database import Database
 from src.db_redis import redis_setup, REDIS_PATH
 from src.libs import SQLGenerator, LLMType
+from src.errors import RedisConnectionError
 
 
 class Orm:
@@ -31,13 +32,16 @@ class Orm:
         '''
         Connects to the Redis server
         '''
-        return redis_setup(self.redis_host, self.redis_port)
+        try:
+            return redis_setup(self.redis_host, self.redis_port)
+        except Exception as e:
+            raise RedisConnectionError(self.redis_host, self.redis_port, e)
 
     async def _connect_database(self):
         '''
         Connects to the database and sets up the connection
         '''
-        db = Database(self.connection_string, self.redis)
+        db = Database(self.connection_string)
         await db.setup()
         return db
 
@@ -49,12 +53,8 @@ class Orm:
         return query
 
     async def make_sql_request(self, question: str, tables: bool, request_data=False):
-        try:
-            result = await self.make_request(question, tables, request_data)
-            return result
-        except Exception as e:
-            print(f"An unexpected error occurred: {e}")
-            return f"An unexpected error occurred: {e}"
+        result = await self.make_request(question, tables, request_data)
+        return result
 
     async def make_request(self, question: str, tables: list, request_data: bool):
         '''

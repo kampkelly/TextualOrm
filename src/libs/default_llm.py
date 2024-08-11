@@ -3,10 +3,11 @@ from langchain_huggingface.llms import HuggingFacePipeline
 from langchain_core.output_parsers import StrOutputParser
 from langchain import PromptTemplate
 from langchain_huggingface import HuggingFacePipeline
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, TextStreamer, pipeline
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, pipeline
 from peft import PeftModel
 from langchain_core.prompts import PromptTemplate
 from src.libs.base import LLMBase
+from src.errors import SQLGeneratorError
 
 
 class SQLGeneratorLLM(LLMBase):
@@ -25,8 +26,11 @@ class SQLGeneratorLLM(LLMBase):
         '''
         Sets up the SQLGeneratorLLM by getting the model and tokenizer
         '''
-        self.get_model()
-        self.get_tokenizer()
+        try:
+            self.get_model()
+            self.get_tokenizer()
+        except Exception as e:
+            raise SQLGeneratorError(e)
 
     def get_model(self):
         '''

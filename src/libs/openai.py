@@ -1,6 +1,7 @@
 from src.libs.base import LLMBase
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
+from src.errors import SQLGeneratorError
 
 
 class OpenAILLM(LLMBase):
@@ -17,15 +18,18 @@ class OpenAILLM(LLMBase):
         '''
         Sets up the SQLGeneratorLLM by getting the model and tokenizer
         '''
-        llm = ChatOpenAI(
-            model="gpt-4o",
-            temperature=0,
-            max_tokens=None,
-            timeout=None,
-            max_retries=2,
-            api_key=self.api_key
-        )
-        self.llm = llm
+        try:
+            llm = ChatOpenAI(
+                model="gpt-4o",
+                temperature=0,
+                max_tokens=None,
+                timeout=None,
+                max_retries=2,
+                api_key=self.api_key
+            )
+            self.llm = llm
+        except Exception as e:
+            raise SQLGeneratorError(e)
 
     def get_prompt(self):
         '''
