@@ -48,15 +48,15 @@ class Orm:
         query = self.sql_generator.generate_query(question, schemas)
         return query
 
-    async def make_sql_request(self, question: str, tables=[]):
+    async def make_sql_request(self, question: str, tables: bool, request_data=False):
         try:
-            result = await self.make_request(question, tables)
+            result = await self.make_request(question, tables, request_data)
             return result
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
             return f"An unexpected error occurred: {e}"
 
-    async def make_request(self, question: str, tables=[]):
+    async def make_request(self, question: str, tables: list, request_data: bool):
         '''
         Starts query retrieval
         check if in redis, then quick return
@@ -71,7 +71,7 @@ class Orm:
         tables_schema = ""
 
         if not tables:
-            return ""
+            raise ValueError("Tables is required")
 
         strip_tables = [t.strip() for t in tables]
         c = ",".join(strip_tables)
@@ -89,15 +89,17 @@ class Orm:
 
         sql_query = self.get_llm_query(question, tables_schema)
 
-        if not redis_val:
-            if tables and combined_str and hash_str:
-                self.redis.hset(redis_path, mapping={
-                    'sql_query': sql_query,
-                    'schemas': tables_schema
-                })
-                pass
+        result = {"query": sql_query, "data": None}
+        if request_data:
+            if not redis_val:
+                if tables and combined_str and hash_str:
+                    self.redis.hset(redis_path, mapping={
+                        'sql_query': sql_query,
+                        'schemas': tables_schema
+                    })
 
-        result = await self.query_db(sql_query)
+            data = await self.query_db(sql_query)
+            result["data"] = data
         return result
 
     async def query_db(self, query_str: str):
@@ -111,8 +113,8 @@ class Orm:
 
 # example usage
 async def main():
-    orm = Orm(connection_string="postgresql://", 
-              llm_type=LLMType.DEFAULT, redis_host="localhost", 
+    orm = Orm(connection_string="postgresql://",
+              llm_type=LLMType.DEFAULT, redis_host="localhost",
               redis_port=6379, api_key="")
     await orm.setup()
     req = await orm.make_sql_request("List of settings", ["setting"])
