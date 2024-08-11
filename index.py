@@ -1,8 +1,9 @@
 import asyncio
 import hashlib
-from pprint import pprint
 from src.database import Database
 from src.db_redis import redis_setup, REDIS_PATH
+from src.libs.default_llm import SQLGeneratorLLM
+from src.responses import SQLGeneratorError
 
 
 class Orm:
@@ -15,6 +16,7 @@ class Orm:
         self.redis_port = redis_port
         self.db = None
         self.redis = None
+        self.sql_generator = SQLGeneratorLLM()
 
     async def setup(self):
         '''
@@ -22,6 +24,7 @@ class Orm:
         '''
         self.redis = self.__connect_redis()
         self.db = await self._connect_database()
+        self.sql_generator.setup()
 
     def __connect_redis(self):
         '''
@@ -38,18 +41,19 @@ class Orm:
 
         return db
 
-    def get_llm_query(self, question: str, schemas=None):
+    def get_llm_query(self, question: str, schemas=str):
         '''
         Gets sql query from question and schema. Validates the sql query to have non-destructive actions.
         '''
-        # call to llm
-        # validate llm
-        return "SELECT * FROM setting"
+        query = self.sql_generator.generate_query(question, schemas)
+        validate_query, message = self.sql_generator.validate_query(query)
+        if validate_query:
+            return query
+        raise SQLGeneratorError(f"Generated SQL query is not valid: \"{message}\". Please retry with a different prompt")
 
     async def make_sql_request(self, question: str, tables=[]):
         try:
             result = await self.make_request(question, tables)
-            pprint(result)
             return result
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
@@ -69,20 +73,22 @@ class Orm:
         sql_query = ""
         tables_schema = ""
 
-        if tables:
-            strip_tables = [t.strip() for t in tables]
-            c = ",".join(strip_tables)
-            combined_str = question.strip() + " Tables: " + c            
-            hash_str = hashlib.sha256(combined_str.encode()).hexdigest()
-            redis_path = f"{REDIS_PATH}:{hash_str}"
-            redis_val = self.redis.hgetall(redis_path)
+        if not tables:
+            return ""
 
-            if redis_val:
-                sql_query = redis_val.get("sql_query")
-            else:
-                for table_name in tables:
-                    schema = await self.db.get_table_schema(table_name)
-                    tables_schema = tables_schema + schema
+        strip_tables = [t.strip() for t in tables]
+        c = ",".join(strip_tables)
+        combined_str = question.strip() + " Tables: " + c            
+        hash_str = hashlib.sha256(combined_str.encode()).hexdigest()
+        redis_path = f"{REDIS_PATH}:{hash_str}"
+        redis_val = self.redis.hgetall(redis_path)
+
+        if redis_val:
+            sql_query = redis_val.get("sql_query")
+        else:
+            for table_name in tables:
+                schema = await self.db.get_table_schema(table_name)
+                tables_schema = tables_schema + schema
 
         sql_query = self.get_llm_query(question, tables_schema)
 
@@ -92,6 +98,7 @@ class Orm:
                     'sql_query': sql_query,
                     'schemas': tables_schema
                 })
+                pass
 
         result = await self.query_db(sql_query)
         return result
@@ -107,8 +114,9 @@ class Orm:
 
 # example usage
 async def main():
-    orm = Orm(connection_string="postgresql://runor:postgres@localhost:5432/db_name", redis_host="localhost", redis_port=6379)
+    orm = Orm(connection_string="postgresql://", redis_host="localhost", redis_port=6379)
     await orm.setup()
-    await orm.make_sql_request(" Give me list of settings", ["setting"])
+    req = await orm.make_sql_request("List of settings", ["setting"])
+    print(req)
 
 asyncio.run(main())

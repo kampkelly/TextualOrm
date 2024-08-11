@@ -1,2 +1,8 @@
 asyncpg==0.29.0
 redis[hiredis]==5.0.8
+langchain==0.2.12
+langchain-huggingface==0.0.3
+transformers==4.44.0
+langchain_community==0.2.11
+peft==0.12.0
+torch==2.4.0
