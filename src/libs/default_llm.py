@@ -1,6 +1,4 @@
-import re
 import torch
-from abc import ABC, abstractmethod
 from langchain_huggingface.llms import HuggingFacePipeline
 from langchain_core.output_parsers import StrOutputParser
 from langchain import PromptTemplate
@@ -8,30 +6,14 @@ from langchain_huggingface import HuggingFacePipeline
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, TextStreamer, pipeline
 from peft import PeftModel
 from langchain_core.prompts import PromptTemplate
-
-
-class LLMBase(ABC):
-    @abstractmethod
-    def setup(self):
-        pass
-
-    @abstractmethod
-    def get_prompt(self):
-        pass
-
-    @abstractmethod
-    def generate_query(self, question: str, schemas: str):
-        pass
-
-    def validate_query(self, query: str):
-        patterns = [r'\bcreate\b', r'\bupdate\b', r'\bdelete\b']
-        if any(re.search(pattern, query.lower()) for pattern in patterns):
-            return False, "Query contains modifier statements"
-        return True, ""
+from src.libs.base import LLMBase
 
 
 class SQLGeneratorLLM(LLMBase):
     def __init__(self):
+        '''
+        Initializes the SQLGeneratorLLM class
+        '''
         self.base_model_name = "google/flan-t5-base"
         self.model_name = "kampkelly/sql-generator"
         self.tokenizer = None
@@ -40,10 +22,16 @@ class SQLGeneratorLLM(LLMBase):
         self.get_prompt()
 
     def setup(self):
+        '''
+        Sets up the SQLGeneratorLLM by getting the model and tokenizer
+        '''
         self.get_model()
         self.get_tokenizer()
 
     def get_model(self):
+        '''
+        Retrieves the model for SQL generation
+        '''
         self.model = AutoModelForSeq2SeqLM.from_pretrained(self.base_model_name, torch_dtype=torch.bfloat16)
         PeftModel.from_pretrained(self.model,
                                   self.model_name,
@@ -53,12 +41,18 @@ class SQLGeneratorLLM(LLMBase):
         return self.model
 
     def get_tokenizer(self):
+        '''
+        Retrieves the tokenizer for SQL generation
+        '''
         self.tokenizer = AutoTokenizer.from_pretrained(self.base_model_name)
         return self.tokenizer
 
     def get_prompt(self):
+        '''
+        Generates the prompt template for SQL generation
+        '''
         template = """
-          Given the PostgreSQL schema 
+          Given the PostgreSQL schema
           {schemas}
           generate only the sql query with no additional text for this question: {question}
         """
@@ -67,6 +61,9 @@ class SQLGeneratorLLM(LLMBase):
         return self.prompt
 
     def get_llm(self):
+        '''
+        Retrieves the language model for SQL generation
+        '''
         generate_kwargs = {
             "num_beams": 3,
             "do_sample": True,
@@ -79,6 +76,9 @@ class SQLGeneratorLLM(LLMBase):
         return HuggingFacePipeline(pipeline=pipe)
 
     def get_query(self, question: str, schemas: str):
+        '''
+        Gets the SQL query based on the question and schemas
+        '''
         llm = self.get_llm()
         chain = self.prompt | llm | StrOutputParser()
 
@@ -86,5 +86,8 @@ class SQLGeneratorLLM(LLMBase):
         return result
 
     def generate_query(self, question: str, schemas: str):
+        '''
+        Generates the SQL query based on the question and schemas
+        '''
         query = self.get_query(question, schemas)
         return query

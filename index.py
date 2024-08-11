@@ -2,12 +2,11 @@ import asyncio
 import hashlib
 from src.database import Database
 from src.db_redis import redis_setup, REDIS_PATH
-from src.libs.default_llm import SQLGeneratorLLM
-from src.responses import SQLGeneratorError
+from src.libs import SQLGenerator, LLMType
 
 
 class Orm:
-    def __init__(self, connection_string: str, redis_host: str, redis_port: int, min_size=1, max_size=5):
+    def __init__(self, connection_string: str, llm_type: LLMType, redis_host: str, redis_port: int, min_size=1, max_size=5, **kwargs):
         self.connection_string = connection_string
         self.min_size = min_size
         self.max_size = max_size
@@ -16,7 +15,8 @@ class Orm:
         self.redis_port = redis_port
         self.db = None
         self.redis = None
-        self.sql_generator = SQLGeneratorLLM()
+        self.sql_generator = SQLGenerator(llm_type, **kwargs)
+        self.llm_type = llm_type
 
     async def setup(self):
         '''
@@ -24,6 +24,7 @@ class Orm:
         '''
         self.redis = self.__connect_redis()
         self.db = await self._connect_database()
+
         self.sql_generator.setup()
 
     def __connect_redis(self):
@@ -38,18 +39,14 @@ class Orm:
         '''
         db = Database(self.connection_string, self.redis)
         await db.setup()
-
         return db
 
-    def get_llm_query(self, question: str, schemas=str):
+    def get_llm_query(self, question: str, schemas: str):
         '''
         Gets sql query from question and schema. Validates the sql query to have non-destructive actions.
         '''
         query = self.sql_generator.generate_query(question, schemas)
-        validate_query, message = self.sql_generator.validate_query(query)
-        if validate_query:
-            return query
-        raise SQLGeneratorError(f"Generated SQL query is not valid: \"{message}\". Please retry with a different prompt")
+        return query
 
     async def make_sql_request(self, question: str, tables=[]):
         try:
@@ -114,7 +111,9 @@ class Orm:
 
 # example usage
 async def main():
-    orm = Orm(connection_string="postgresql://", redis_host="localhost", redis_port=6379)
+    orm = Orm(connection_string="postgresql://", 
+              llm_type=LLMType.DEFAULT, redis_host="localhost", 
+              redis_port=6379, api_key="")
     await orm.setup()
     req = await orm.make_sql_request("List of settings", ["setting"])
     print(req)
