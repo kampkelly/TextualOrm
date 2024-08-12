@@ -1,6 +1,6 @@
 import redis
 
-REDIS_PATH = "orm"
+REDIS_PATH = "textualorm"
 
 
 def redis_setup(host: str, port: int):

@@ -6,7 +6,7 @@ from src.libs import SQLGenerator, LLMType
 from src.errors import RedisConnectionError
 
 
-class Orm:
+class TextualOrm:
     def __init__(self, connection_string: str, llm_type: LLMType, redis_host: str, redis_port: int, min_size=1, max_size=5, **kwargs):
         self.connection_string = connection_string
         self.min_size = min_size
@@ -113,11 +113,16 @@ class Orm:
 
 # example usage
 async def main():
-    orm = Orm(connection_string="postgresql://",
-              llm_type=LLMType.DEFAULT, redis_host="localhost",
-              redis_port=6379, api_key="")
-    await orm.setup()
-    req = await orm.make_sql_request("List of settings", ["setting"])
+    textual_orm = TextualOrm(
+        connection_string="postgresql://user:password@host:port/db_name",
+        llm_type=LLMType.DEFAULT,
+        redis_host="localhost",
+        redis_port=6379,
+        api_key=""
+    )
+    await textual_orm.setup()
+    req = await textual_orm.make_sql_request("List of settings", ["setting"])
     print(req)
 
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())
