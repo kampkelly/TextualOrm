@@ -1,7 +1,7 @@
-from src.libs.base import LLMBase
+from textual_orm.libs.base import LLMBase
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
-from src.errors import SQLGeneratorError
+from textual_orm.errors import SQLGeneratorError
 
 
 class OpenAILLM(LLMBase):

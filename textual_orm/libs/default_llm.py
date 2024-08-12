@@ -1,13 +1,12 @@
 import torch
 from langchain_huggingface.llms import HuggingFacePipeline
 from langchain_core.output_parsers import StrOutputParser
-from langchain import PromptTemplate
 from langchain_huggingface import HuggingFacePipeline
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, pipeline
 from peft import PeftModel
 from langchain_core.prompts import PromptTemplate
-from src.libs.base import LLMBase
-from src.errors import SQLGeneratorError
+from textual_orm.libs.base import LLMBase
+from textual_orm.errors import SQLGeneratorError
 
 
 class SQLGeneratorLLM(LLMBase):

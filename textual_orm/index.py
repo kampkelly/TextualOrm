@@ -1,9 +1,9 @@
 import asyncio
 import hashlib
-from src.database import Database
-from src.db_redis import redis_setup, REDIS_PATH
-from src.libs import SQLGenerator, LLMType
-from src.errors import RedisConnectionError
+from textual_orm.database import Database
+from textual_orm.db_redis import redis_setup, REDIS_PATH
+from textual_orm.libs import SQLGenerator, LLMType
+from textual_orm.errors import RedisConnectionError
 
 
 class TextualOrm:
@@ -109,20 +109,3 @@ class TextualOrm:
         '''
         query = await self.db.make_query(query_str)
         return query
-
-
-# example usage
-async def main():
-    textual_orm = TextualOrm(
-        connection_string="postgresql://user:password@host:port/db_name",
-        llm_type=LLMType.DEFAULT,
-        redis_host="localhost",
-        redis_port=6379,
-        api_key=""
-    )
-    await textual_orm.setup()
-    req = await textual_orm.make_sql_request("List of settings", ["setting"])
-    print(req)
-
-if __name__ == "__main__":
-    asyncio.run(main())

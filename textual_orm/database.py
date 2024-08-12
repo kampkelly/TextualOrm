@@ -1,6 +1,6 @@
 import asyncpg
 import asyncio
-from src.errors import DatabaseError
+from textual_orm.errors import DatabaseError
 
 
 class Database:

@@ -1,5 +1,5 @@
 # TextualOrm
-<img src="textualorm.png" alt="Example Image" width="100"/>
+<img src="https://i.imgur.com/kTfe0vU.png" alt="Example Image" width="100"/>
 
 This tool generates SQL queries from natural language and retrieves query results. This orm generates sql queries from your input and the specifics of your connected database and can also run them to retrieve records.
 
@@ -24,6 +24,7 @@ You can find more information about the default SQL Generator by going to the li
 ### Usage Instructions
 1. Initialize the Generator
     ```
+    from textual_orm import TextualOrm
     textual_orm = TextualOrm(connection_string="postgresql://user:password@host:port/db_name",
                 llm_type=LLMType.DEFAULT, redis_host="localhost",
                 redis_port=6379)
@@ -32,6 +33,7 @@ You can find more information about the default SQL Generator by going to the li
     To use the OpenAI implementation, add your api-key to the arguments:
 
     ```
+    from textual_orm import TextualOrm
     textual_orm = TextualOrm(connection_string="postgresql://user:password@host:port/db_name",
                 llm_type=LLMType.DEFAULT, redis_host="localhost",
                 redis_port=6379, api-key="")
@@ -57,12 +59,13 @@ You can find more information about the default SQL Generator by going to the li
 
     ```
     {
-      'query': 'SELECT * FROM setting ORDER BY created_at timestamp DESC LIMIT 5;',
+      'query': 'SELECT * FROM setting ORDER BY created_at DESC LIMIT 5;',
       'data': [<records>]
     }
     ```
     Where data is a list of records from the query response. `data` will be None if `request_data=False` as in the default case.
 
+Note that first time run may take a little time.
 For better performance, speed and caching, redis is required.
 
 
@@ -73,10 +76,3 @@ Below is a list of other supported arguments to Orm:
 `min_size=1` minimum size o pool
 `max_size=10` maxiumum size of pool
 `api_key=""` api key for the given llm
-
-``
-``
-
-  ```
-
-  ```
