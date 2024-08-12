@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='textual_orm',
-    version='0.1.2',
+    version='0.1.3',
     packages=find_packages(),
     license='MIT',
     description='SQL Generator and Query Result Retriever',

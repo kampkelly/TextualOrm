@@ -1,15 +1,18 @@
 # TextualOrm
-<img src="https://i.imgur.com/kTfe0vU.png" alt="Example Image" width="100"/>
+
+<img src="https://i.imgur.com/I2HI4X3.png" alt="TextualOrm" width="100"/>
 
 This tool generates SQL queries from natural language and retrieves query results. This orm generates sql queries from your input and the specifics of your connected database and can also run them to retrieve records.
 
-**Currently this orm will only honour retrieval queries. i.e any queries that perform delete, create or any crud actions wont be executed on your database**
+Find the code [here](https://github.com/kampkelly/TextualOrm)
+
+**Currently, this ORM only supports retrieval queries. Queries that perform delete, create, or other CRUD (Create, Read, Update, Delete) actions will not be executed on your database.**.
 
 The core of this application is the use of Large Language Models to generate the sql queries. This orm currently supports two LLMs:
 1. [SQL Generator LLM](https://huggingface.co/kampkelly/sql-generator) - (free and the default llm used).
 2. OpenAI (requires subscription to OpenAI)
 
-You can find more information about the default SQL Generator by going to the link [here](https://huggingface.co/kampkelly/sql-generator). This has been fine-trained from the flan-t5-base model.
+You can find more information about the default SQL Generator LLM by going to the link [here](https://huggingface.co/kampkelly/sql-generator). This has been fine-trained from the flan-t5-base model.
 
 ### Requirements
 - Python
@@ -19,10 +22,10 @@ You can find more information about the default SQL Generator by going to the li
 
 
 ### Installation
-`pip install sql-generator`
+`pip install textual_orm`
 
 ### Usage Instructions
-1. Initialize the Generator
+1. Initialize the Orm
     ```
     from textual_orm import TextualOrm
     textual_orm = TextualOrm(connection_string="postgresql://user:password@host:port/db_name",
@@ -66,6 +69,7 @@ You can find more information about the default SQL Generator by going to the li
     Where data is a list of records from the query response. `data` will be None if `request_data=False` as in the default case.
 
 Note that first time run may take a little time.
+
 For better performance, speed and caching, redis is required.
 
 
@@ -73,6 +77,6 @@ For better performance, speed and caching, redis is required.
 This orm uses a default postgres max pool of 10. You can modify it if needed by passing your value to the `max_pool` argument.
 
 Below is a list of other supported arguments to Orm:
-`min_size=1` minimum size o pool
-`max_size=10` maxiumum size of pool
-`api_key=""` api key for the given llm
+- `min_size=1` minimum size of pool
+- `max_size=10` maxiumum size of pool
+- `api_key=""` api key for the given llm
